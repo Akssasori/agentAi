@@ -25,10 +25,13 @@ class QueryRequest(BaseModel):
 
 # Função para buscar no ChromaDB e gerar resposta
 def retrieve_and_respond(query):
+    print("Buscando informações...")
     results = collection.query(
         query_texts=[query],
         n_results=3
     )
+
+    print(results)
 
     retrieved_texts = [doc for doc in results["documents"][0]]
 
@@ -45,9 +48,9 @@ def retrieve_and_respond(query):
     """
 
     response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[
-            {"role": "system", "content": "Você é um assistente especializado em veiculação comercial."},
+            {"role": "system", "content": "Você é um assistente especializado em responder dúvidas sobre regras de veiculação comercial na empresa Globo."},
             {"role": "user", "content": prompt}
         ]
     )

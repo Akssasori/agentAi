@@ -5,4 +5,5 @@ chatbot_rag/__pycache__/
 clean_pdf/lista-precos_fev25_texto.txt
 clean_pdf/lista-precos_fev25_sem_imagens.pdf
 chromaDb_verify/chroma_db/
+clean_pdf/202502_lista-precos_fev25.txt
 

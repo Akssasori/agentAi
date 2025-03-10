@@ -86,11 +86,11 @@
 #     else:
 #         print(f"Arquivo não encontrado: {pdf_path}")
 
-import fitz  # PyMuPDF para extração de texto
-import chromadb
-import os
+import fitz  # PyMuPDF para extração de texto pdf
+import chromadb # ChromaDB para indexação vetorial
+import os # Para manipulação de arquivos
 
-# Função para extrair texto do PDF
+# Função para extrair texto do PDF percorrendo todas as páginas
 def extract_text_from_pdf(pdf_path):
     text = ""
     with fitz.open(pdf_path) as doc:
@@ -98,7 +98,7 @@ def extract_text_from_pdf(pdf_path):
             text += page.get_text("text") + "\n"
     return text
 
-# Função para dividir texto em chunks
+# Função para dividir texto em chunks(Agrupa essas sentenças em chunks menores que 1000 caracteres)
 def split_text_into_chunks(text, max_chars=1000):
     sentences = text.split(". ")
     chunks = []
@@ -135,17 +135,28 @@ def index_pdf(pdf_path, collection_name="regras_veiculacao"):
 
     # Inicializa o cliente ChromaDB
     try:
-        # Use o cliente HTTP em vez do cliente persistente
+        # Usando o cliente HTTP em vez do cliente persistente de acordo com a criação do chroma no docker
         chroma_client = chromadb.HttpClient(host="localhost", port=8000)
         print("Cliente ChromaDB HTTP inicializado com sucesso.")
         
         # Lista as coleções existentes antes de criar uma nova
         existing_collections = chroma_client.list_collections()
-        print(f"Coleções existentes: {existing_collections}")
+        print(f"Coleções existentes: {[coll.name for coll in existing_collections]}")
+
+        # Verifica e exclui a coleção existente com o mesmo nome
+        for coll in existing_collections:
+            if coll.name == collection_name:
+                chroma_client.delete_collection(name=collection_name)
+                print(f"Coleção anterior '{collection_name}' excluída.")
+                break
         
         # Cria ou obtém a coleção
-        collection = chroma_client.get_or_create_collection(name=collection_name)
-        print(f"Coleção '{collection_name}' obtida ou criada.")
+        # collection = chroma_client.get_or_create_collection(name=collection_name)
+        # print(f"Coleção '{collection_name}' obtida ou criada.")
+
+        # Cria uma nova coleção
+        collection = chroma_client.create_collection(name=collection_name)
+        print(f"Nova coleção '{collection_name}' criada.")
         
         # Adiciona os chunks à coleção
         for i, chunk in enumerate(chunks):
@@ -161,13 +172,13 @@ def index_pdf(pdf_path, collection_name="regras_veiculacao"):
         
         # Lista as coleções novamente para confirmar
         final_collections = chroma_client.list_collections()
-        print(f"Coleções após indexação: {final_collections}")
+        print(f"Coleções após indexação: {[coll.name for coll in final_collections]}")
         
     except Exception as e:
         print(f"Erro ao trabalhar com ChromaDB: {e}")
 
 if __name__ == "__main__":
-    pdf_path = "202502_lista-precos_fev25.pdf"  # Substitua pelo seu arquivo PDF
+    pdf_path = "202502_lista-precos_fev25.pdf"  # Seu arquivo PDF
     
     if os.path.exists(pdf_path):
         print(f"Arquivo encontrado: {pdf_path}")
